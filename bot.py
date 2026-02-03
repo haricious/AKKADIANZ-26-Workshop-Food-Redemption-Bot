@@ -37,38 +37,55 @@ def register(update, context):
 
     reg_id = context.args[0].strip().upper()
 
-    # Validate student ID (alphanumeric, 4–15 chars)
+    # Validate format
     if not re.fullmatch(r"[A-Z0-9]{4,15}", reg_id):
         update.message.reply_text(
-            "❗ Enter a valid Student ID (letters & numbers only)"
+            "❗ Enter a valid Student ID"
         )
         return
 
     tg_id = update.effective_user.id
 
+    # Check if student exists
+    c.execute(
+        "SELECT code_day1 FROM users WHERE reg_id=?",
+        (reg_id,)
+    )
+    row = c.fetchone()
+
+    if not row:
+        update.message.reply_text(
+            "❌ Student ID not found. Please check your registration."
+        )
+        return
+
+    # Already registered
+    if row[0] is not None:
+        update.message.reply_text(
+            "❌ OTPs already issued for this Student ID."
+        )
+        return
+
     otp_day1 = generate_otp()
     otp_day2 = generate_otp()
 
-    try:
-        c.execute(
-            "INSERT INTO users VALUES (?, ?, ?, ?, 0, 0)",
-            (reg_id, tg_id, otp_day1, otp_day2)
-        )
-        conn.commit()
+    c.execute(
+        """
+        UPDATE users
+        SET tg_id=?, code_day1=?, code_day2=?
+        WHERE reg_id=?
+        """,
+        (tg_id, otp_day1, otp_day2, reg_id)
+    )
+    conn.commit()
 
-        update.message.reply_text(
-            "✅ Registration successful!\n\n"
-            f"🎓 Student ID: {reg_id}\n\n"
-            f"🍽 Day 1 Food OTP: {otp_day1}\n"
-            f"🍽 Day 2 Food OTP: {otp_day2}\n\n"
-            "📌 Show the OTP at the food counter."
-        )
-
-    except:
-        update.message.reply_text(
-            "❌ This Student ID is already registered."
-        )
-
+    update.message.reply_text(
+        "✅ Registration successful!\n\n"
+        f"🎓 Student ID: {reg_id}\n\n"
+        f"🍽 Day 1 Food OTP: {otp_day1}\n"
+        f"🍽 Day 2 Food OTP: {otp_day2}\n\n"
+        "📌 Show the OTP at the food counter."
+    )
 # =========================
 # CORE REDEEM LOGIC
 # =========================
