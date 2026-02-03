@@ -10,7 +10,7 @@ import re
 TOKEN = "8438365476:AAEv0q8nqIq-vZIBwfYo4LEaxTtQLa25GoE"
 
 # ONLY volunteers (admins) can redeem
-ADMIN_IDS = [6797155121,6501059047]
+ADMIN_IDS = [6797155121, 6501059047]
 
 # =========================
 # DATABASE CONNECTION
@@ -32,14 +32,16 @@ def generate_otp():
 
 def register(update, context):
     if len(context.args) != 1:
-        update.message.reply_text("❗ Use: /register PHONE_NUMBER")
+        update.message.reply_text("❗ Use: /register STUDENT_ID")
         return
 
-    phone = context.args[0].strip()
+    reg_id = context.args[0].strip().upper()
 
-    # Validate phone number (10 digits)
-    if not phone.isdigit() or len(phone) != 10:
-        update.message.reply_text("❗ Enter a valid 10-digit phone number")
+    # Validate student ID (alphanumeric, 4–15 chars)
+    if not re.fullmatch(r"[A-Z0-9]{4,15}", reg_id):
+        update.message.reply_text(
+            "❗ Enter a valid Student ID (letters & numbers only)"
+        )
         return
 
     tg_id = update.effective_user.id
@@ -50,19 +52,23 @@ def register(update, context):
     try:
         c.execute(
             "INSERT INTO users VALUES (?, ?, ?, ?, 0, 0)",
-            (phone, tg_id, otp_day1, otp_day2)
+            (reg_id, tg_id, otp_day1, otp_day2)
         )
         conn.commit()
 
         update.message.reply_text(
             "✅ Registration successful!\n\n"
+            f"🎓 Student ID: {reg_id}\n\n"
             f"🍽 Day 1 Food OTP: {otp_day1}\n"
             f"🍽 Day 2 Food OTP: {otp_day2}\n\n"
             "📌 Show the OTP at the food counter."
         )
 
     except:
-        update.message.reply_text("❌ This phone number is already registered.")
+        update.message.reply_text(
+            "❌ This Student ID is already registered."
+        )
+
 # =========================
 # CORE REDEEM LOGIC
 # =========================
@@ -90,7 +96,7 @@ def redeem_otp(update, otp):
             )
             conn.commit()
             update.message.reply_text(
-                f"🟢 VALID – SERVE FOOD\nReg ID: {reg_id}"
+                f"🟢 VALID – SERVE FOOD\n🎓 Reg ID: {reg_id}"
             )
         else:
             update.message.reply_text("🔴 USED – DO NOT SERVE")
@@ -112,7 +118,7 @@ def redeem_otp(update, otp):
             )
             conn.commit()
             update.message.reply_text(
-                f"🟢 VALID – SERVE FOOD\nReg ID: {reg_id}"
+                f"🟢 VALID – SERVE FOOD\n🎓 Reg ID: {reg_id}"
             )
         else:
             update.message.reply_text("🔴 USED – DO NOT SERVE")
