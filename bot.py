@@ -10,7 +10,7 @@ import re
 TOKEN = "8438365476:AAEv0q8nqIq-vZIBwfYo4LEaxTtQLa25GoE"
 
 # ONLY volunteers (admins) can redeem
-ADMIN_IDS = [6797155121]
+ADMIN_IDS = [6797155121,6501059047]
 
 # =========================
 # DATABASE CONNECTION
